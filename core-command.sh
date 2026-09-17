@@ -8,16 +8,17 @@ SHORTCUTS="$ROOT_DIR/shortcuts.json"
 
 usage() {
   cat <<'EOF'
-CORE — command gateway
+CORE — unified task router
 
 Usage:
   ./core-command.sh <request>
   ./core-command.sh status
   ./core-command.sh shortcuts
+  ./core-command.sh route <request>
   ./core-command.sh help
 
-The gateway classifies natural-language requests into project areas. It never
-bypasses the security guard and never authorizes external targets.
+CORE routes natural-language requests to a project area and emits a safe,
+deterministic execution plan. It never grants authorization or bypasses guards.
 EOF
 }
 
@@ -60,14 +61,39 @@ classify() {
   echo general
 }
 
+route() {
+  local request="$1"
+  local area
+  area="$(classify "$request")"
+  python3 - "$SHORTCUTS" "$area" "$request" <<'PY'
+import json,sys
+shortcuts_path, area, request = sys.argv[1:]
+with open(shortcuts_path, encoding='utf-8') as f:
+    data=json.load(f)
+reverse={
+ 'security':'/sec','code':'/code','report':'/report','english':'/english',
+ 'football':'/football','integrations':'/plugins','general':'/core'
+}
+print(f'area={area}')
+print(f'gateway={reverse.get(area,"/core")}')
+print('request=' + request)
+print('execution=authorized-tools-only')
+print('validation=required')
+print('retry=on-retryable-failure')
+PY
+}
+
 if [[ $# -eq 0 ]]; then usage; exit 0; fi
 case "${1,,}" in
   help|-h|--help) usage ;;
   status|doctor) status ;;
   shortcuts|shortcut|اختصارات) shortcuts ;;
-  classify) shift; [[ $# -gt 0 ]] || { echo general; exit 0; }; classify "$*" ;;
-  *)
-    area="$(classify "$*")"
-    printf 'area=%s\nrequest=%s\n' "$area" "$*"
+  route|مسار)
+    shift
+    [[ $# -gt 0 ]] || { echo 'request is required' >&2; exit 2; }
+    route "$*"
     ;;
+  classify)
+    shift; [[ $# -gt 0 ]] || { echo general; exit 0; }; classify "$*" ;;
+  *) route "$*" ;;
 esac
