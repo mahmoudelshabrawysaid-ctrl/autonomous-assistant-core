@@ -33,10 +33,16 @@ new_report() {
   local type="${1:-}" target="${2:-}" title="${3:-}" status="${4:-completed}"
   [[ -n "$type" && -n "$target" && -n "$title" ]] || { echo 'type, target and title are required.' >&2; return 2; }
   init >/dev/null
-  local stamp id file
+  local stamp id file suffix
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   id="${stamp}_$(safe_name "$type")_$(safe_name "$target")"
   file="$REPORT_DIR/${id}.md"
+  suffix=1
+  while [[ -e "$file" ]]; do
+    file="$REPORT_DIR/${id}_${suffix}.md"
+    suffix=$((suffix + 1))
+  done
+  id="$(basename "$file" .md)"
   cat > "$file" <<EOF
 # Security Lab Report
 
