@@ -7,8 +7,8 @@ import sys
 import urllib.error
 import urllib.request
 
-API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses")
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+API_URL = os.getenv("OPENAI_API_URL") or "https://api.openai.com/v1/responses"
+MODEL = os.getenv("OPENAI_MODEL") or "gpt-4.1-mini"
 
 
 def chat(prompt: str) -> str:
