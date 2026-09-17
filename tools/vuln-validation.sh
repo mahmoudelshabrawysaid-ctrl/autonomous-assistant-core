@@ -31,10 +31,11 @@ validate(){
 }
 
 self_test(){
-  local f out
-  f="$(mktemp)"; trap 'rm -f "$f"' EXIT
-  printf '%s\n' 'finding=synthetic-vulnerability' 'proof=deterministic-test-evidence' 'repeatable=yes' 'status=confirmed' 'severity=medium' 'remediation=patch-fixture' > "$f"
-  out="$(validate "$f")"
+  local tmp_file out
+  tmp_file="$(mktemp)"
+  printf '%s\n' 'finding=synthetic-vulnerability' 'proof=deterministic-test-evidence' 'repeatable=yes' 'status=confirmed' 'severity=medium' 'remediation=patch-fixture' > "$tmp_file"
+  out="$(validate "$tmp_file")"
+  rm -f -- "$tmp_file"
   grep -q '^verdict=CONFIRMED$' <<<"$out"
   grep -q '^severity=medium$' <<<"$out"
   echo 'vulnerability-validation self-test: PASS'
