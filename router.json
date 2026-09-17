@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "default_gateway": "/core",
+  "areas": {
+    "security": {"shortcut": "/sec", "validation": "tests + safety guard", "authorization_required": true},
+    "code": {"shortcut": "/code", "validation": "CI + project tests", "authorization_required": true},
+    "report": {"shortcut": "/report", "validation": "output existence + format checks", "authorization_required": false},
+    "english": {"shortcut": "/english", "validation": "content checks", "authorization_required": false},
+    "football": {"shortcut": "/football", "validation": "fresh-source check", "authorization_required": false},
+    "integrations": {"shortcut": "/plugins", "validation": "connector availability + action result", "authorization_required": true},
+    "general": {"shortcut": "/core", "validation": "task-specific", "authorization_required": false}
+  },
+  "lifecycle": ["understand", "route", "check_authorization", "execute", "validate", "retry_if_recoverable", "report"],
+  "states": ["PASS", "RETRY", "BLOCKED", "FAIL"]
+}
