@@ -1,27 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deterministic Evidence -> Correlation -> Finding -> Risk -> Remediation engine.
-# It consumes scanner/test output; it never performs network activity.
-
 usage() {
   cat <<'EOF'
 Finding Engine — authorized/local lab only
-
 Usage:
   finding-engine.sh from-file <source> <target> <input-file>
   finding-engine.sh self-test
-
-Input: key=value evidence lines. Recognized keys include:
-  finding, evidence, source, status, severity, remediation
-
-Output: stable key=value records suitable for Report Engine.
 EOF
 }
 
 from_file() {
-  local source="$1" target="$2" file="$3"
-  [[ -f "$file" ]] || { echo 'status=error reason=input-not-found' >&2; return 2; }
+  local source="$1" target="$2" input_file="$3"
+  [[ -f "$input_file" ]] || { echo 'status=error reason=input-not-found' >&2; return 2; }
   local finding='' evidence='' sources='' status=''
   local severity='info' remediation='Review evidence and reproduce locally.'
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -33,7 +24,7 @@ from_file() {
       severity=*) severity="${line#severity=}" ;;
       remediation=*) remediation="${line#remediation=}" ;;
     esac
-  done < "$file"
+  done < "$input_file"
 
   local confidence='none' verdict='insufficient-evidence'
   if [[ -n "$finding" && -n "$evidence" ]]; then
@@ -48,10 +39,10 @@ from_file() {
 }
 
 self_test() {
-  local f out
-  f="$(mktemp)"
-  trap 'rm -f "$f"' EXIT
-  cat > "$f" <<'EOF'
+  local tmp_file out
+  tmp_file="$(mktemp)"
+  trap 'rm -f "$tmp_file"' EXIT
+  cat > "$tmp_file" <<'EOF'
 finding=test-finding
 evidence=synthetic-proof
 source=fixture-a
@@ -60,7 +51,7 @@ status=confirmed
 severity=low
 remediation=fix-test-control
 EOF
-  out="$(from_file ctf synthetic-target "$f")"
+  out="$(from_file ctf synthetic-target "$tmp_file")"
   grep -q '^confidence=confirmed$' <<<"$out"
   grep -q '^verdict=confirmed$' <<<"$out"
   grep -q '^severity=low$' <<<"$out"
