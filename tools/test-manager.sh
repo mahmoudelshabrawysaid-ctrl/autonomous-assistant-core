@@ -14,6 +14,7 @@ Usage:
   ./tools/test-manager.sh security
   ./tools/test-manager.sh ctf
   ./tools/test-manager.sh reports
+  ./tools/test-manager.sh vuln
   ./tools/test-manager.sh phone
   ./tools/test-manager.sh lab
   ./tools/test-manager.sh help
@@ -23,7 +24,7 @@ EOF
 run_syntax() {
   echo '[test-manager] syntax/config'
   python3 -m py_compile "$ROOT_DIR/openai_client.py" "$ROOT_DIR/assistant/safety_guard.py"
-  for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh core-command.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tools/phone-osint.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh tests/test_phone_osint.sh tests/test_lab_manager.sh; do
+  for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh core-command.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tools/phone-osint.sh tools/finding-engine.sh tools/vuln-validation.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh tests/test_phone_osint.sh tests/test_lab_manager.sh tests/test_finding_engine.sh tests/test_vuln_validation.sh; do
     [[ -f "$ROOT_DIR/$f" ]] && bash -n "$ROOT_DIR/$f"
   done
   python3 -m json.tool "$ROOT_DIR/config.json" >/dev/null
@@ -42,6 +43,10 @@ run_unit() {
   [[ -f "$ROOT_DIR/tests/test_report_engine.sh" ]] && bash "$ROOT_DIR/tests/test_report_engine.sh"
   echo '[test-manager] unit: phone-osint'
   [[ -f "$ROOT_DIR/tests/test_phone_osint.sh" ]] && bash "$ROOT_DIR/tests/test_phone_osint.sh"
+  echo '[test-manager] unit: finding-engine'
+  [[ -f "$ROOT_DIR/tests/test_finding_engine.sh" ]] && bash "$ROOT_DIR/tests/test_finding_engine.sh"
+  echo '[test-manager] unit: vulnerability-validation'
+  [[ -f "$ROOT_DIR/tests/test_vuln_validation.sh" ]] && bash "$ROOT_DIR/tests/test_vuln_validation.sh"
   echo '[test-manager] unit: lab-manager'
   [[ -f "$ROOT_DIR/tests/test_lab_manager.sh" ]] && bash "$ROOT_DIR/tests/test_lab_manager.sh"
   echo '[test-manager] unit: python'
@@ -67,6 +72,11 @@ run_reports() {
   SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" "$ROOT_DIR/tools/report-engine.sh" validate
 }
 
+run_vuln() {
+  echo '[test-manager] vulnerability validation'
+  bash "$ROOT_DIR/tools/vuln-validation.sh" self-test
+}
+
 run_phone() {
   echo '[test-manager] phone OSINT validation'
   bash "$ROOT_DIR/tests/test_phone_osint.sh"
@@ -78,12 +88,13 @@ run_lab() {
 }
 
 case "${1:-all}" in
-  all) run_syntax; run_unit; run_security; run_ctf; run_reports; echo 'test-manager: PASS' ;;
+  all) run_syntax; run_unit; run_security; run_ctf; run_reports; run_vuln; echo 'test-manager: PASS' ;;
   syntax) run_syntax; echo 'syntax/config: PASS' ;;
   unit) run_unit; echo 'unit: PASS' ;;
   security) run_security ;;
   ctf) run_ctf ;;
   reports) run_reports ;;
+  vuln) run_vuln ;;
   phone) run_phone ;;
   lab) run_lab ;;
   help|-h|--help) usage ;;
