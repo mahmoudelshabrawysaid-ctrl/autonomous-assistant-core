@@ -50,9 +50,18 @@
 
 `openai_client.py` يستخدم Responses API بدون مكتبات خارجية. الإعدادات تقرأ من متغيرات البيئة مع قيم افتراضية آمنة. أضف `OPENAI_API_KEY` كـ GitHub Secret أو متغير بيئة محلي؛ لا تضع المفتاح داخل الملفات أو المستودع.
 
-## CI
+## CI وTest Manager
 
-`.github/workflows/ci.yml` يتحقق تلقائيًا من Python وJSON وBash ويبحث عن أنماط مفاتيح/مفاتيح خاصة مسربة. `.github/workflows/ai.yml` يبقى تشغيلًا يدويًا فقط لتجنب تشغيل API غير مقصود.
+- `.github/workflows/ci.yml` يتحقق من Python وJSON وBash ويبحث عن أنماط مفاتيح/مفاتيح خاصة مسربة.
+- `.github/workflows/test-manager.yml` يشغّل Test Manager على push وpull request ويدويًا.
+- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، وفحص الأسرار في أمر واحد:
+
+```bash
+bash tools/test-manager.sh all
+```
+
+- `tests/test_test_manager.sh` يتحقق من أن Test Manager نفسه قابل للتشغيل وفحوصه الأساسية تعمل.
+- `.github/workflows/ai.yml` يبقى تشغيلًا يدويًا فقط لتجنب تشغيل API غير مقصود.
 
 ## المشروع الأصلي
 
