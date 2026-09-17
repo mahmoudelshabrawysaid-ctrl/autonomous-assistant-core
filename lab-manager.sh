@@ -6,13 +6,10 @@ BIN_DIR="${HOME}/bin"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$SEC_DIR" "$SEC_DIR/targets" "$SEC_DIR/reports" "$SEC_DIR/ctf" "$SEC_DIR/cases" "$SEC_DIR/tools" "$BIN_DIR"
 
-# Preserve existing allowlist entries; never overwrite user-approved lab targets.
 touch "$SEC_DIR/targets/allowlist.txt"
 for t in 127.0.0.1 localhost ::1; do grep -Fxq "$t" "$SEC_DIR/targets/allowlist.txt" || echo "$t" >> "$SEC_DIR/targets/allowlist.txt"; done
 
-# Copy lab-only engines into a stable installation path. Source files may lose their
-# executable bit when checked out through some GitHub/CI paths, so test for -f here
-# and enforce executability on the installed copies.
+# GitHub/CI checkouts can lose executable bits. Install copies and set their mode explicitly.
 if [[ -f "$ROOT_DIR/tools/report-engine.sh" ]]; then
   cp "$ROOT_DIR/tools/report-engine.sh" "$SEC_DIR/tools/report-engine.sh"
   chmod +x "$SEC_DIR/tools/report-engine.sh"
@@ -143,10 +140,13 @@ case "${1:-help}" in
     grep -Fxq "$target" "$SEC_DIR/targets/allowlist.txt" || printf '%s\n' "$target" >> "$SEC_DIR/targets/allowlist.txt"
     echo "Allowlisted: $target"
     ;;
-  ctf) printf 'CTF catalog: %s\n' "$SEC_DIR/ctf/targets.tsv"; column -t -s $'\t' "$SEC_DIR/ctf/targets.tsv" 2>/dev/null || cat "$SEC_DIR/ctf/targets.tsv" ;;
+  ctf)
+    printf 'CTF catalog: %s\n' "$SEC_DIR/ctf/targets.tsv"
+    column -t -s $'\t' "$SEC_DIR/ctf/targets.tsv" 2>/dev/null || cat "$SEC_DIR/ctf/targets.tsv"
+    ;;
   lab) exec "$HOME/bin/lab" ;;
-  report) exec "$HOME/bin/report" "${2:-}" ;
-  doctor) "$HOME/bin/lab" --doctor ;
+  report) exec "$HOME/bin/report" "${2:-}" ;;
+  doctor) "$HOME/bin/lab" --doctor ;;
   help|*) cat <<'EOF'
 Commands:
   scan [target]    authorized scan + automatic report
@@ -159,7 +159,7 @@ Commands:
   report [file]    create a report
   doctor           health check
 EOF
-  ;;
+    ;;
 esac
 CMD
 chmod +x "$BIN_DIR/sec"
