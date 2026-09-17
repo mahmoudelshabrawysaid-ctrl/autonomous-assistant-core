@@ -1,0 +1,26 @@
+name: CTF Catalog Validation
+
+on:
+  push:
+    paths:
+      - 'tools/ctf-manager.sh'
+      - 'tests/test_ctf_manager.sh'
+      - '.github/workflows/ctf.yml'
+  pull_request:
+    paths:
+      - 'tools/ctf-manager.sh'
+      - 'tests/test_ctf_manager.sh'
+      - '.github/workflows/ctf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate CTF manager
+        run: bash tests/test_ctf_manager.sh
