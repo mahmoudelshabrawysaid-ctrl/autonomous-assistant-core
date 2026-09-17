@@ -14,13 +14,36 @@
 
 ```bash
 pkg install -y git
-
 git clone https://github.com/mahmoudelshabrawysaid-ctrl/autonomous-assistant-core.git
 cd autonomous-assistant-core
 bash termux-ethical-lab-install.sh
+source ~/.bashrc
 ```
 
-يحاول السكربت تثبيت: Nmap, Python 3, Git, curl, wget, Netcat, tcpdump, OpenSSH, Hydra, SQLmap، ثم ينشئ `~/sec_lab`.
+السكربت يحدّث Termux، يحاول تثبيت الأدوات الأساسية، ينشئ `~/sec_lab`، ويضيف أوامر كلمة واحدة إلى `~/bin`.
+
+## أوامر كلمة واحدة
+
+بعد الإعداد:
+
+```text
+scan [target]    فحص Nmap لهدف مصرح به
+recon [target]   اكتشاف خدمات أساسي لهدف مصرح به
+vuln [target]    فحص Nmap لثغرات معروفة على هدف مصرح به
+ctf              فتح مساحة CTF المحلية
+lab              إنشاء/تحديث المختبر
+update           تحديث الحزم والأدوات
+ doctor           فحص الأدوات والمختبر
+help             عرض الأوامر
+```
+
+إذا لم تحدد الهدف، سيطلبه الأمر تفاعليًا بدل تخمينه.
+
+## آلاف حالات التدريب
+
+المختبر ينشئ تلقائيًا فهرسًا من **1000 حالة تدريبية اصطناعية** موزعة على مجالات مثل Web وAPI وAuthentication وNetwork وCloud وContainer وMobile وForensics وLogging وSupply Chain. هذه حالات تعليمية محلية وليست نشرًا لثغرات حقيقية على الإنترنت.
+
+يمكن توسيع الكتالوج لاحقًا بإضافة حالات جديدة إلى `~/sec_lab/cases/`.
 
 > استخدم أدوات الأمن فقط على أنظمة تملكها أو لديك تصريح صريح لاختبارها، مثل مختبر محلي أو بيئة CTF.
 
