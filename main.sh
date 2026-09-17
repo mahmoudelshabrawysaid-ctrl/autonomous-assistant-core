@@ -35,8 +35,8 @@ echo "[i] OpenAI API:"
 if [[ -n "${OPENAI_API_KEY:-}" ]]; then
     echo "[✓] OPENAI_API_KEY is configured in the environment."
 else
-    echo "[!] OPENAI_API_KEY is not configured."
-    echo "    Set it in your local Termux environment; never put it in GitHub files."
+    echo "[!] OPENAI_API_KEY is not configured in this environment."
+    echo "    For GitHub Actions, configure the repository secret OPENAI_API_KEY."
 fi
 
 echo
