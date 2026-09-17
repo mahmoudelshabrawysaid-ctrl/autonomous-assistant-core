@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-python3 -m py_compile "$ROOT/openai_client.py" "$ROOT/assistant/safety_guard.py"
-python3 -m json.tool "$ROOT/config.json" >/dev/null
-python3 -m json.tool "$ROOT/tasks.json" >/dev/null
-python3 -m json.tool "$ROOT/shortcuts.json" >/dev/null
-bash -n "$ROOT/core-command.sh"
-for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh; do
-  [[ -f "$ROOT/$f" ]] && bash -n "$ROOT/$f"
-done
-bash "$ROOT/tests/test_core_command.sh"
-bash "$ROOT/tests/test_test_manager.sh"
-bash "$ROOT/tests/test_ctf_manager.sh"
-bash "$ROOT/tests/test_report_engine.sh"
-python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' -q
-! grep -RInE '(sk-[A-Za-z0-9_-]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY)' "$ROOT" --exclude-dir=.git --exclude='*.md'
-echo 'project tests: PASS'
+step() { printf '\n==> %s\n' "$1"; shift; "$@"; }
+step 'Python syntax' python3 -m py_compile "$ROOT/openai_client.py" "$ROOT/assistant/safety_guard.py"
+step 'JSON validation' bash -c 'python3 -m json.tool "$1" >/dev/null && python3 -m json.tool "$2" >/dev/null && python3 -m json.tool "$3" >/dev/null' _ "$ROOT/config.json" "$ROOT/tasks.json" "$ROOT/shortcuts.json"
+step 'Bash syntax' bash -c '
+  root="$1"
+  for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh; do
+    if [[ -f "$root/$f" ]]; then bash -n "$root/$f"; fi
+  done
+' _ "$ROOT"
+step 'Core tests' bash "$ROOT/tests/test_core_command.sh"
+step 'Test Manager tests' bash "$ROOT/tests/test_test_manager.sh"
+step 'CTF Manager tests' bash "$ROOT/tests/test_ctf_manager.sh"
+step 'Report Engine tests' bash "$ROOT/tests/test_report_engine.sh"
+step 'Python unit tests' python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' -q
+step 'Secret scan' bash -c '! grep -RInE '\''(sk-[A-Za-z0-9_-]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY)'\'' "$1" --exclude-dir=.git --exclude='*.md'' _ "$ROOT"
+printf '\nproject tests: PASS\n'
