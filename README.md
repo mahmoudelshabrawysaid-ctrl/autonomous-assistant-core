@@ -65,6 +65,33 @@
 
 الكتالوج مخصص لتمارين محلية اصطناعية ونطاقها `local-only`.
 
+## Evidence → Finding → Validation → Report
+
+المشروع يحتوي الآن على مسار موحّد لتحويل الأدلة الاصطناعية/المحلية إلى نتائج قابلة للمراجعة:
+
+- `tools/finding-engine.sh` — يربط الأدلة بالمصدر والحالة ويُخرج verdict وconfidence وremediation دون تنفيذ شبكة.
+- `tools/vuln-validation.sh` — يتحقق من وجود finding + proof + repeatable + confirmed status قبل إصدار `CONFIRMED`.
+- `tools/report-engine.sh` — ينشئ التقرير ويستطيع تشغيل validation محليًا عبر `from-vuln` ثم تضمين نتيجة التحقق داخل التقرير.
+
+مثال محلي:
+
+```bash
+cat > evidence.txt <<'EOF'
+finding=synthetic-vulnerability
+proof=deterministic-test-evidence
+repeatable=yes
+status=confirmed
+severity=medium
+remediation=patch-fixture
+EOF
+
+./tools/finding-engine.sh from-file evidence.txt
+./tools/vuln-validation.sh validate evidence.txt
+./tools/report-engine.sh from-vuln ctf localhost "Synthetic validation" evidence.txt
+```
+
+كل هذه الأدوات مصممة للعمل على أدلة محلية/اصطناعية فقط ولا تنفذ استغلالًا أو فحصًا لأهداف خارجية.
+
 ## Report Engine
 
 `tools/report-engine.sh` هو محرك تقارير موحّد لنتائج الـLab والـCTF والاختبارات. المحرك لا ينفذ فحوصًا أو اتصالات؛ هو يستقبل النتائج ويحوّلها إلى تقارير Markdown تحت `~/sec_lab/reports/`.
@@ -73,12 +100,13 @@
 ./tools/report-engine.sh init
 ./tools/report-engine.sh new ctf localhost "Authentication CTF"
 ./tools/report-engine.sh from-file lab localhost "Local scan" result.txt
+./tools/report-engine.sh from-vuln ctf localhost "Validated finding" evidence.txt
 ./tools/report-engine.sh list
 ./tools/report-engine.sh validate
 ./tools/report-engine.sh stats
 ```
 
-كل تقرير يحمل نوع العملية والهدف والنطاق والحالة والتوقيت وملخصًا ومكان الأدلة وخطوات المتابعة. النطاق الافتراضي في المحرك `local-only`.
+كل تقرير يحمل نوع العملية والهدف والنطاق والحالة والتوقيت وملخصًا ومكان الأدلة وخطوات المتابعة. تقارير validation تحتوي أيضًا على نتيجة الـengine والـverdict عندما تستخدم `from-vuln`. النطاق الافتراضي في المحرك `local-only`.
 
 > استخدم أدوات الأمن فقط على أنظمة تملكها أو لديك تصريح صريح لاختبارها. إعداد المختبر لا يمنحك تصريحًا لاختبار أي هدف خارجي.
 
@@ -92,4 +120,4 @@
 - `.github/workflows/test-manager.yml` يشغّل Test Manager على push وpull request ويدويًا.
 - `.github/workflows/ctf.yml` يتحقق من CTF Manager على التغييرات الخاصة به.
 - `.github/workflows/report-engine.yml` يتحقق من Report Engine ويشغّل Test Manager.
-- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، فحص الأسرار، CTF validation وReport validation.
+- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، فحص الأسرار، CTF validation، Report validation، وVulnerability Validation.
