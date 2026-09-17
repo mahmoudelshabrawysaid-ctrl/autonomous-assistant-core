@@ -64,12 +64,12 @@ run_security() {
 
 run_ctf() {
   echo '[test-manager] ctf validation'
-  SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" "$ROOT_DIR/tools/ctf-manager.sh" validate
+  SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" bash "$ROOT_DIR/tools/ctf-manager.sh" validate
 }
 
 run_reports() {
   echo '[test-manager] report validation'
-  SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" "$ROOT_DIR/tools/report-engine.sh" validate
+  SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" bash "$ROOT_DIR/tools/report-engine.sh" validate
 }
 
 run_vuln() {
