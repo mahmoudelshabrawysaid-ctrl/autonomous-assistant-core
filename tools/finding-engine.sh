@@ -41,7 +41,6 @@ from_file() {
 self_test() {
   local tmp_file out
   tmp_file="$(mktemp)"
-  trap 'rm -f "$tmp_file"' EXIT
   cat > "$tmp_file" <<'EOF'
 finding=test-finding
 evidence=synthetic-proof
@@ -52,6 +51,7 @@ severity=low
 remediation=fix-test-control
 EOF
   out="$(from_file ctf synthetic-target "$tmp_file")"
+  rm -f -- "$tmp_file"
   grep -q '^confidence=confirmed$' <<<"$out"
   grep -q '^verdict=confirmed$' <<<"$out"
   grep -q '^severity=low$' <<<"$out"
