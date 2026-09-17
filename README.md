@@ -8,6 +8,21 @@
 - `config.json` — إعدادات المشروع واسم متغيرات البيئة.
 - `.github/workflows/ai.yml` — تشغيل يدوي آمن من GitHub Actions.
 - `sync.sh` — مزامنة Git المحلية مع GitHub عند استخدام بيئة محلية.
+- `termux-ethical-lab-install.sh` — تجهيز مختبر أمن سيبراني للتعلم وCTF واختبارات الأنظمة المصرح بها على Termux.
+
+## تشغيل مختبر Termux
+
+```bash
+pkg install -y git
+
+git clone https://github.com/mahmoudelshabrawysaid-ctrl/autonomous-assistant-core.git
+cd autonomous-assistant-core
+bash termux-ethical-lab-install.sh
+```
+
+يحاول السكربت تثبيت: Nmap, Python 3, Git, curl, wget, Netcat, tcpdump, OpenSSH, Hydra, SQLmap، ثم ينشئ `~/sec_lab`.
+
+> استخدم أدوات الأمن فقط على أنظمة تملكها أو لديك تصريح صريح لاختبارها، مثل مختبر محلي أو بيئة CTF.
 
 ## التشغيل من GitHub
 
