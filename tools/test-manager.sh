@@ -13,13 +13,14 @@ Usage:
   ./tools/test-manager.sh unit
   ./tools/test-manager.sh security
   ./tools/test-manager.sh ctf
+  ./tools/test-manager.sh reports
   ./tools/test-manager.sh help
 EOF
 }
 
 run_syntax() {
   python3 -m py_compile "$ROOT_DIR/openai_client.py" "$ROOT_DIR/assistant/safety_guard.py"
-  for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh core-command.sh tools/test-manager.sh tools/ctf-manager.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh; do
+  for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh core-command.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh; do
     [[ -f "$ROOT_DIR/$f" ]] && bash -n "$ROOT_DIR/$f"
   done
   python3 -m json.tool "$ROOT_DIR/config.json" >/dev/null
@@ -31,6 +32,7 @@ run_unit() {
   [[ -f "$ROOT_DIR/tests/test_core_command.sh" ]] && bash "$ROOT_DIR/tests/test_core_command.sh"
   [[ -f "$ROOT_DIR/tests/test_test_manager.sh" ]] && bash "$ROOT_DIR/tests/test_test_manager.sh"
   [[ -f "$ROOT_DIR/tests/test_ctf_manager.sh" ]] && bash "$ROOT_DIR/tests/test_ctf_manager.sh"
+  [[ -f "$ROOT_DIR/tests/test_report_engine.sh" ]] && bash "$ROOT_DIR/tests/test_report_engine.sh"
   python3 -m unittest discover -s "$ROOT_DIR/tests" -p 'test_*.py' -q
 }
 
@@ -46,12 +48,17 @@ run_ctf() {
   SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" "$ROOT_DIR/tools/ctf-manager.sh" validate
 }
 
+run_reports() {
+  SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" "$ROOT_DIR/tools/report-engine.sh" validate
+}
+
 case "${1:-all}" in
-  all) run_syntax; run_unit; run_security; run_ctf; echo 'test-manager: PASS' ;;
+  all) run_syntax; run_unit; run_security; run_ctf; run_reports; echo 'test-manager: PASS' ;;
   syntax) run_syntax; echo 'syntax/config: PASS' ;;
   unit) run_unit; echo 'unit: PASS' ;;
   security) run_security ;;
   ctf) run_ctf ;;
+  reports) run_reports ;;
   help|-h|--help) usage ;;
   *) echo "unknown command: $1" >&2; usage >&2; exit 2 ;;
 esac
