@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG="$ROOT_DIR/config.json"
 TASKS="$ROOT_DIR/tasks.json"
+SHORTCUTS="$ROOT_DIR/shortcuts.json"
 
 usage() {
   cat <<'EOF'
@@ -12,11 +13,21 @@ CORE — command gateway
 Usage:
   ./core-command.sh <request>
   ./core-command.sh status
+  ./core-command.sh shortcuts
   ./core-command.sh help
 
 The gateway classifies natural-language requests into project areas. It never
 bypasses the security guard and never authorizes external targets.
 EOF
+}
+
+shortcuts() {
+  python3 - "$SHORTCUTS" <<'PY'
+import json,sys
+with open(sys.argv[1], encoding='utf-8') as f: d=json.load(f)
+for command, description in d.get('commands', {}).items():
+    print(f'{command} — {description}')
+PY
 }
 
 status() {
@@ -53,6 +64,7 @@ if [[ $# -eq 0 ]]; then usage; exit 0; fi
 case "${1,,}" in
   help|-h|--help) usage ;;
   status|doctor) status ;;
+  shortcuts|shortcut|اختصارات) shortcuts ;;
   classify) shift; [[ $# -gt 0 ]] || { echo general; exit 0; }; classify "$*" ;;
   *)
     area="$(classify "$*")"
