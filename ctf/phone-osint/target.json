@@ -1,0 +1,20 @@
+{
+  "scope": "local-only",
+  "phone": "+201001234567",
+  "owner": "CTF Synthetic User",
+  "accounts": ["training-mail@example.invalid", "lab-chat-user"],
+  "sim_swap": "simulated-risk",
+  "otp": {
+    "channel": "sms",
+    "rate_limit": "missing",
+    "attempt_window": "unbounded-simulation"
+  },
+  "recovery": {
+    "phone_only": true,
+    "secondary_factor": false
+  },
+  "leak": {
+    "source": "synthetic-fixture",
+    "data": ["display_name", "test_email"]
+  }
+}
