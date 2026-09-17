@@ -3,10 +3,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 step() { printf '\n==> %s\n' "$1"; shift; "$@"; }
 step 'Python syntax' python3 -m py_compile "$ROOT/openai_client.py" "$ROOT/assistant/safety_guard.py"
-step 'JSON validation' bash -c 'python3 -m json.tool "$1" >/dev/null && python3 -m json.tool "$2" >/dev/null && python3 -m json.tool "$3" >/dev/null' _ "$ROOT/config.json" "$ROOT/tasks.json" "$ROOT/shortcuts.json"
+step 'JSON validation' bash -c 'python3 -m json.tool "$1" >/dev/null && python3 -m json.tool "$2" >/dev/null && python3 -m json.tool "$3" >/dev/null && [[ ! -e "$4" || -f "$4" ]]' _ "$ROOT/config.json" "$ROOT/tasks.json" "$ROOT/shortcuts.json" "$ROOT/router.json"
 step 'Bash syntax' bash -c '
   root="$1"
-  for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh; do
+  for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh core-command.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh; do
     if [[ -f "$root/$f" ]]; then bash -n "$root/$f"; fi
   done
 ' _ "$ROOT"
