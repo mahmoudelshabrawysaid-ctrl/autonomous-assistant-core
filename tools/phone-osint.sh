@@ -15,6 +15,7 @@ Public Phone Intelligence — offline, authorized lab workflow
 Usage:
   phone-osint.sh inspect <phone>
   phone-osint.sh intel <phone>
+  phone-osint.sh deep <phone>
   phone-osint.sh audit <phone>
   phone-osint.sh report <phone>
   phone-osint.sh ctf-fixture
@@ -22,6 +23,7 @@ Usage:
 Modes:
   inspect   Local numbering/format metadata only.
   intel     Public-data intelligence using explicitly configured providers.
+  deep      Evidence-oriented intelligence with correlation and provenance.
   audit     Defensive privacy-exposure checklist plus local metadata.
   report    Create a Report Engine report from the audit/intel result.
 
@@ -30,9 +32,10 @@ Provider model:
   set is offline. Network providers must be lawful public sources or APIs you
   are authorized to use and must return public/business metadata only.
 
-This module never performs OTP/reset flows, telecom manipulation, credential
-checks, private-account enumeration, identity resolution, address discovery,
-or attempts to bypass provider access controls.
+Safety boundary:
+  Never perform OTP/reset flows, telecom manipulation, credential checks,
+  private-account enumeration, identity resolution, address discovery, or
+  attempts to bypass provider access controls.
 EOF
 }
 
@@ -74,7 +77,7 @@ inspect() {
 }
 
 load_config() {
-  mkdir -p "$(dirname "$CONFIG_FILE")"
+  mkdir -p "$(dirname "$CONFIG_FILE")" "$CACHE_DIR"
   if [[ ! -f "$CONFIG_FILE" ]]; then
     cat > "$CONFIG_FILE" <<'EOF'
 # Public Phone Intelligence providers
@@ -115,6 +118,28 @@ intel() {
   printf '%s\n' '- Prefer agreement across independent public sources.' '- Treat names/labels as unverified unless published by the owner or a business entity.' '- Record source and timestamp for every external result.' '- Do not infer identity from weak matches or shared numbers.'
 }
 
+deep() {
+  local n now raw provider_lines ok=0 err=0 blocked=0
+  n="$(normalize "$1")" || return 1
+  now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  raw="$(mktemp)"
+  trap 'rm -f "$raw"' RETURN
+  run_providers "$n" > "$raw"
+  while IFS= read -r provider_lines; do
+    case "$provider_lines" in
+      provider=*\ status=ok\ *) ok=$((ok+1)) ;;
+      provider=*\ status=error\ *) err=$((err+1)) ;;
+      provider=*\ status=blocked\ *) blocked=$((blocked+1)) ;;
+    esac
+  done < "$raw"
+  printf 'deep_status=completed\nobserved_at=%s\nnormalized=%s\n' "$now" "$n"
+  inspect "$n"
+  printf '\nprovenance=\nprovider_config=%s\nproviders_ok=%d\nproviders_error=%d\nproviders_blocked=%d\n' "$CONFIG_FILE" "$ok" "$err" "$blocked"
+  printf '\nevidence_policy=\n- Evidence must be public and source-attributed.\n- Correlation requires independent-source agreement or owner-published business context.\n- A missing result is not evidence that a number is unused or safe.\n- Identity, address, private profile, OTP/reset, credential and telecom actions are out of scope.\n'
+  printf '\nnext_actions=\n- Review provider output and timestamps.\n- Convert corroborated evidence into Finding -> Risk -> Remediation.\n- Re-check stale business listings before treating them as current.\n'
+  cp "$raw" "$CACHE_DIR/$(printf '%s' "$n" | tr -cd '0-9').providers.txt"
+}
+
 audit() {
   local n="$1"
   inspect "$n"
@@ -131,9 +156,9 @@ report() {
   safe="$(normalize "$n")" || return 1
   raw="$(mktemp)"
   trap 'rm -f "$raw"' RETURN
-  { audit "$safe"; printf '\npublic-intelligence-results=\n'; run_providers "$safe"; } > "$raw"
-  [[ -x "$REPORT_ENGINE" ]] || { echo "Report Engine not executable: $REPORT_ENGINE" >&2; return 2; }
-  report_file="$(bash "$REPORT_ENGINE" from-file phone-intel "$safe" 'Public Phone Intelligence / Privacy Audit' "$raw" completed | tail -n 1)"
+  { deep "$safe"; printf '\npublic-intelligence-results=\n'; run_providers "$safe"; } > "$raw"
+  [[ -f "$REPORT_ENGINE" ]] || { echo "Report Engine not found: $REPORT_ENGINE" >&2; return 2; }
+  report_file="$(bash "$REPORT_ENGINE" from-file phone-intel "$safe" 'Public Phone Intelligence / Deep Privacy Audit' "$raw" completed | tail -n 1)"
   echo "$report_file"
 }
 
@@ -171,6 +196,7 @@ EOF
 case "${1:-help}" in
   inspect) shift; [[ $# -eq 1 ]] || { echo 'one phone number required' >&2; exit 2; }; inspect "$1" ;;
   intel) shift; [[ $# -eq 1 ]] || { echo 'one phone number required' >&2; exit 2; }; intel "$1" ;;
+  deep) shift; [[ $# -eq 1 ]] || { echo 'one phone number required' >&2; exit 2; }; deep "$1" ;;
   audit) shift; [[ $# -eq 1 ]] || { echo 'one phone number required' >&2; exit 2; }; audit "$1" ;;
   report) shift; [[ $# -eq 1 ]] || { echo 'one phone number required' >&2; exit 2; }; report "$1" ;;
   ctf-fixture) ctf_fixture ;;
