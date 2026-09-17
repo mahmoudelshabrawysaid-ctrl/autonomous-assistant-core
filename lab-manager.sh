@@ -5,12 +5,9 @@ SEC_DIR="${HOME}/sec_lab"
 BIN_DIR="${HOME}/bin"
 mkdir -p "$SEC_DIR" "$SEC_DIR/targets" "$SEC_DIR/reports" "$SEC_DIR/ctf" "$SEC_DIR/cases" "$BIN_DIR"
 
-cat > "$SEC_DIR/targets/allowlist.txt" <<'EOF'
-# One exact target per line. Default: local-only.
-127.0.0.1
-localhost
-::1
-EOF
+# Preserve existing allowlist entries; never overwrite user-approved lab targets.
+touch "$SEC_DIR/targets/allowlist.txt"
+for t in 127.0.0.1 localhost ::1; do grep -Fxq "$t" "$SEC_DIR/targets/allowlist.txt" || echo "$t" >> "$SEC_DIR/targets/allowlist.txt"; done
 
 cat > "$SEC_DIR/ctf/targets.tsv" <<'EOF'
 id	name	category	scope	objective
@@ -54,7 +51,6 @@ set -euo pipefail
 SEC_DIR="${HOME}/sec_lab"
 target="${1:-}"
 [[ -n "$target" ]] || { echo 'Target required.' >&2; exit 2; }
-# Never allow URLs, hostnames other than localhost, or public IPs.
 case "$target" in
   localhost|127.0.0.1|::1) : ;;
   10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[0-1].*)
@@ -69,6 +65,18 @@ cat > "$BIN_DIR/report" <<'REPORT'
 #!/usr/bin/env bash
 set -euo pipefail
 SEC_DIR="${HOME}/sec_lab"
+ENGINE="${SEC_LAB_ENGINE:-}"
+if [[ -z "$ENGINE" ]]; then
+  for candidate in "$(cd "$(dirname "$0")/../tools" 2>/dev/null && pwd)/report-engine.sh" "$(cd "$(dirname "$0")/../autonomous-assistant-core/tools" 2>/dev/null && pwd)/report-engine.sh"; do
+    [[ -x "$candidate" ]] && ENGINE="$candidate" && break
+  done
+fi
+if [[ -x "$ENGINE" && -n "${REPORT_TYPE:-}" && -n "${TARGET:-}" && -n "${REPORT_TITLE:-}" ]]; then
+  if [[ -n "${RESULT_FILE:-}" && -f "$RESULT_FILE" ]]; then
+    exec "$ENGINE" from-file "$REPORT_TYPE" "$TARGET" "$REPORT_TITLE" "$RESULT_FILE"
+  fi
+  exec "$ENGINE" new "$REPORT_TYPE" "$TARGET" "$REPORT_TITLE" "${REPORT_STATUS:-completed}"
+fi
 out="${1:-$SEC_DIR/reports/report-$(date +%Y%m%d-%H%M%S).md}"
 mkdir -p "$(dirname "$out")"
 cat > "$out" <<EOF
@@ -97,18 +105,21 @@ SEC_DIR="${HOME}/sec_lab"
 case "${1:-help}" in
   scan|recon|vuln)
     target="${2:-}"; [[ -n "$target" ]] || read -r -p 'Target: ' target
-    target="$HOME/bin/guard" "$target" || exit $?
+    target="$("$HOME/bin/guard" "$target")" || exit $?
     stamp="$(date +%Y%m%d-%H%M%S)"; result="$SEC_DIR/reports/$stamp-$1.txt"
     case "$1" in
       scan) nmap -sV -- "$target" ;;
       recon) nmap -sV --top-ports 100 -- "$target" ;;
       vuln) nmap -sV --script vuln -- "$target" ;;
     esac 2>&1 | tee "$result"
-    TARGET="$target" RESULT_FILE="$result" "$HOME/bin/report" "$SEC_DIR/reports/$stamp-$1.md"
+    REPORT_TYPE="$1" REPORT_TITLE="Security $1 result" TARGET="$target" RESULT_FILE="$result" "$HOME/bin/report"
     ;;
   allow)
     target="${2:-}"; [[ -n "$target" ]] || { echo 'Usage: sec allow PRIVATE_IP'; exit 2; }
-    "$HOME/bin/guard" "$target" >/dev/null || exit $?
+    case "$target" in
+      10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[0-1].*) : ;;
+      *) echo 'Only RFC1918 private IPv4 targets can be allowlisted.' >&2; exit 10 ;;
+    esac
     grep -Fxq "$target" "$SEC_DIR/targets/allowlist.txt" || printf '%s\n' "$target" >> "$SEC_DIR/targets/allowlist.txt"
     echo "Allowlisted: $target"
     ;;
@@ -121,7 +132,7 @@ Commands:
   scan [target]    authorized scan + automatic report
   recon [target]   service discovery + report
   vuln [target]    vulnerability checks + report
-  allow PRIVATE_IP add an exact private lab target to the allowlist
+  allow PRIVATE_IP add an exact RFC1918 private lab target to the allowlist
   ctf              show local CTF targets
   lab              rebuild lab assets
   report [file]    create a report
@@ -141,10 +152,10 @@ if [[ "${1:-}" == "--doctor" ]]; then
   for x in nmap python git curl wget nc tcpdump ssh hydra sqlmap; do command -v "$x" >/dev/null 2>&1 && echo "[OK] $x" || echo "[--] $x"; done
   [[ -s "$SEC_DIR/targets/allowlist.txt" ]] && echo '[OK] safety allowlist' || echo '[--] safety allowlist'
   [[ -s "$SEC_DIR/cases/catalog.tsv" ]] && echo '[OK] CTF/training catalog' || echo '[--] CTF/training catalog'
+  [[ -x "$SEC_DIR/../bin/report" ]] && echo '[OK] report command' || true
   exit 0
 fi
 mkdir -p "$SEC_DIR" "$SEC_DIR/targets" "$SEC_DIR/reports" "$SEC_DIR/ctf" "$SEC_DIR/cases"
-# Preserve user-added private allowlist entries while ensuring localhost entries exist.
 touch "$SEC_DIR/targets/allowlist.txt"
 for t in localhost 127.0.0.1 ::1; do grep -Fxq "$t" "$SEC_DIR/targets/allowlist.txt" || echo "$t" >> "$SEC_DIR/targets/allowlist.txt"; done
 printf 'Lab ready: %s\n' "$SEC_DIR"
