@@ -28,6 +28,22 @@
 - `~/bin/guard` — Safety Guard يمنع الأهداف غير المسموح بها.
 - `~/bin/report` — واجهة التقارير المحلية.
 
+## Public Phone Intelligence
+
+`tools/phone-osint.sh` يوفر فحصًا عامًا وآمنًا لأرقام الهاتف ضمن نطاق Public Phone Intelligence:
+
+```bash
+./tools/phone-osint.sh inspect +201001234567
+./tools/phone-osint.sh intel +201001234567
+./tools/phone-osint.sh deep +201001234567
+./tools/phone-osint.sh audit +201001234567
+./tools/phone-osint.sh report +201001234567
+```
+
+وضع `deep` يسجل وقت الرصد، مصدر إعداد الـproviders، حالات المزودين، وقواعد correlation التي تتطلب مصدرًا عامًا منسوبًا وموافقة بين مصادر مستقلة قبل اعتبار المعلومة مؤكدة. المزودون الخارجيون **opt-in** ومغلقون افتراضيًا؛ يوجد قالب إعداد في `tools/phone-intel-providers.example.conf`.
+
+النطاق يقتصر على metadata العامة، معلومات الأعمال المنشورة، والـpublic-web mentions المسموح بها. لا ينفذ OTP أو password reset أو private-account enumeration أو identity resolution أو address discovery أو SIM/telecom manipulation أو تجاوز ضوابط الوصول.
+
 ## Safety Guard
 
 الوضع الافتراضي يسمح فقط بـ `localhost` وloopback. عناوين الشبكات الخاصة لا تعمل إلا إذا كانت موجودة صراحة في:
@@ -64,7 +80,7 @@
 
 كل تقرير يحمل نوع العملية والهدف والنطاق والحالة والتوقيت وملخصًا ومكان الأدلة وخطوات المتابعة. النطاق الافتراضي في المحرك `local-only`.
 
-> استخدم أدوات الأمن فقط على أنظمة تملكها أو لديك تصريح صريح لاختبارها. إعداد المختبر لا يمنح تصريحًا لاختبار أي هدف خارجي.
+> استخدم أدوات الأمن فقط على أنظمة تملكها أو لديك تصريح صريح لاختبارها. إعداد المختبر لا يمنحك تصريحًا لاختبار أي هدف خارجي.
 
 ## OpenAI
 
@@ -76,16 +92,4 @@
 - `.github/workflows/test-manager.yml` يشغّل Test Manager على push وpull request ويدويًا.
 - `.github/workflows/ctf.yml` يتحقق من CTF Manager على التغييرات الخاصة به.
 - `.github/workflows/report-engine.yml` يتحقق من Report Engine ويشغّل Test Manager.
-- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، فحص الأسرار، CTF validation وReport validation:
-
-```bash
-bash tools/test-manager.sh all
-```
-
-- `tests/test_test_manager.sh` و`tests/test_ctf_manager.sh` و`tests/test_report_engine.sh` تتحقق من مكونات الاختبار.
-- `.github/workflows/ai.yml` يبقى تشغيلًا يدويًا فقط لتجنب تشغيل API غير مقصود.
-
-## المشروع الأصلي
-
-- `main.sh` — فحص بيئة التشغيل ووجود إعداد OpenAI بدون كشف المفتاح.
-- `sync.sh` — مزامنة Git المحلية مع GitHub عند استخدام بيئة محلية.
+- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، فحص الأسرار، CTF validation وReport validation.
