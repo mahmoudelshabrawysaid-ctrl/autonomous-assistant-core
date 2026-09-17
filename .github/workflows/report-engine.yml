@@ -1,0 +1,30 @@
+name: Report Engine Validation
+
+on:
+  push:
+    paths:
+      - 'tools/report-engine.sh'
+      - 'tests/test_report_engine.sh'
+      - 'tools/test-manager.sh'
+      - '.github/workflows/report-engine.yml'
+  pull_request:
+    paths:
+      - 'tools/report-engine.sh'
+      - 'tests/test_report_engine.sh'
+      - 'tools/test-manager.sh'
+      - '.github/workflows/report-engine.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Report Engine
+        run: bash tests/test_report_engine.sh
+      - name: Run Test Manager
+        run: bash tools/test-manager.sh all
