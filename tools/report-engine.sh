@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}"
 REPORT_DIR="$LAB_DIR/reports"
 
@@ -12,6 +13,7 @@ Usage:
   ./tools/report-engine.sh init
   ./tools/report-engine.sh new <type> <target> <title> [status]
   ./tools/report-engine.sh from-file <type> <target> <title> <input-file> [status]
+  ./tools/report-engine.sh from-vuln <type> <target> <title> <evidence-file> [status]
   ./tools/report-engine.sh list
   ./tools/report-engine.sh validate
   ./tools/report-engine.sh stats
@@ -80,6 +82,21 @@ from_file() {
   echo "$file"
 }
 
+from_vuln() {
+  local type="${1:-}" target="${2:-}" title="${3:-}" input="${4:-}" status="${5:-completed}"
+  [[ -n "$input" && -f "$input" ]] || { echo "Evidence file not found: $input" >&2; return 2; }
+  local validation file
+  validation="$(bash "$ROOT_DIR/tools/vuln-validation.sh" validate "$input")"
+  file="$(new_report "$type" "$target" "$title" "$status")"
+  {
+    printf '\n## Vulnerability Validation\n\n'
+    printf '```text\n%s\n```\n' "$validation"
+    printf '\n## Evidence\n\n- Source file: `%s`\n' "$input"
+    printf '\n## Validation Policy\n\n- Validation is deterministic and local-only.\n- A vulnerability is CONFIRMED only when finding, proof, repeatability, and confirmed status are all present.\n'
+  } >> "$file"
+  echo "$file"
+}
+
 list_reports() {
   init >/dev/null
   find "$REPORT_DIR" -maxdepth 1 -type f -name '*.md' -printf '%f\n' | sort
@@ -91,6 +108,10 @@ validate() {
   while IFS= read -r f; do
     grep -q '^# Security Lab Report$' "$f" || { echo "FAIL: missing header: $f"; bad=1; }
     grep -q '\*\*Scope:\*\* local-only' "$f" || { echo "FAIL: non-local scope: $f"; bad=1; }
+    if grep -q '^## Vulnerability Validation$' "$f"; then
+      grep -q '^engine=vulnerability-validation$' "$f" || { echo "FAIL: missing validation engine: $f"; bad=1; }
+      grep -q '^verdict=' "$f" || { echo "FAIL: missing validation verdict: $f"; bad=1; }
+    fi
   done < <(find "$REPORT_DIR" -maxdepth 1 -type f -name '*.md')
   (( bad == 0 )) && echo 'report-engine: PASS' || return 1
 }
@@ -106,6 +127,7 @@ case "${1:-help}" in
   init) init ;;
   new) shift; new_report "$@" ;;
   from-file) shift; from_file "$@" ;;
+  from-vuln) shift; from_vuln "$@" ;;
   list) list_reports ;;
   validate) validate ;;
   stats) stats ;;
