@@ -25,6 +25,11 @@ grep -q '^observed_at=' <<<"$deep"
 grep -q '^provider_config=' <<<"$deep"
 grep -q 'Evidence must be public' <<<"$deep"
 grep -q 'Identity, address, private profile' <<<"$deep"
+grep -q '^evidence_state=NONE' <<<"$deep"
+grep -q '^correlation_status=INSUFFICIENT_EVIDENCE' <<<"$deep"
+grep -q '^confidence=LOW' <<<"$deep"
+grep -q '^risk=UNDETERMINED' <<<"$deep"
+grep -q '^remediation=' <<<"$deep"
 
 fixture="$(bash "$TOOL" ctf-fixture)"
 [[ -f "$fixture/target.json" ]]
