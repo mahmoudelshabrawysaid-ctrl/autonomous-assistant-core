@@ -19,6 +19,7 @@ EOF
 }
 
 run_syntax() {
+  echo '[test-manager] syntax/config'
   python3 -m py_compile "$ROOT_DIR/openai_client.py" "$ROOT_DIR/assistant/safety_guard.py"
   for f in main.sh sync.sh setup-sec-lab.sh lab-manager.sh termux-ethical-lab-install.sh core-command.sh tools/test-manager.sh tools/ctf-manager.sh tools/report-engine.sh tests/test_core_command.sh tests/test_test_manager.sh tests/test_ctf_manager.sh tests/test_report_engine.sh; do
     [[ -f "$ROOT_DIR/$f" ]] && bash -n "$ROOT_DIR/$f"
@@ -29,14 +30,20 @@ run_syntax() {
 }
 
 run_unit() {
+  echo '[test-manager] unit: core'
   [[ -f "$ROOT_DIR/tests/test_core_command.sh" ]] && bash "$ROOT_DIR/tests/test_core_command.sh"
+  echo '[test-manager] unit: test-manager'
   [[ -f "$ROOT_DIR/tests/test_test_manager.sh" ]] && bash "$ROOT_DIR/tests/test_test_manager.sh"
+  echo '[test-manager] unit: ctf'
   [[ -f "$ROOT_DIR/tests/test_ctf_manager.sh" ]] && bash "$ROOT_DIR/tests/test_ctf_manager.sh"
+  echo '[test-manager] unit: reports'
   [[ -f "$ROOT_DIR/tests/test_report_engine.sh" ]] && bash "$ROOT_DIR/tests/test_report_engine.sh"
+  echo '[test-manager] unit: python'
   python3 -m unittest discover -s "$ROOT_DIR/tests" -p 'test_*.py' -q
 }
 
 run_security() {
+  echo '[test-manager] security scan'
   if grep -RInE '(sk-[A-Za-z0-9_-]{20,}|BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY)' "$ROOT_DIR" --exclude-dir=.git --exclude='*.md'; then
     echo 'potential secret detected' >&2
     return 1
@@ -45,10 +52,12 @@ run_security() {
 }
 
 run_ctf() {
+  echo '[test-manager] ctf validation'
   SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" "$ROOT_DIR/tools/ctf-manager.sh" validate
 }
 
 run_reports() {
+  echo '[test-manager] report validation'
   SEC_LAB_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}" "$ROOT_DIR/tools/report-engine.sh" validate
 }
 
