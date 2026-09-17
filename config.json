@@ -1,8 +1,15 @@
 {
   "project_name": "autonomous-assistant-core",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "auto_sync": false,
   "engine_status": "active",
+  "command_center": {
+    "enabled": true,
+    "command": "/core",
+    "natural_language": true,
+    "execute_directly_when_authorized": true,
+    "final_only_reporting": true
+  },
   "openai": {
     "enabled": true,
     "api_key_env": "OPENAI_API_KEY",
