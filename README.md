@@ -10,7 +10,7 @@
 /core <اكتب طلبك بطريقتك العادية>
 ```
 
-البوابة تفهم الطلب وتربطه بمجال المشروع المناسب مثل الأمن السيبراني، الكود وGitHub، التقارير، English، كرة القدم، والتكاملات. لا تحتاج لمعرفة أسماء الأدوات الداخلية.
+البوابة تفهم الطلب وتربطه بمجال المشروع المناسب مثل الأمن السيبراني، الكود وGitHub، التقارير، English، كرة القدم، والتكاملات.
 
 - `core-command.sh` — بوابة تصنيف الطلبات محليًا.
 - `COMMAND_DICTIONARY.md` — قاموس المصطلحات والمرادفات.
@@ -26,7 +26,7 @@
 - `lab-manager.sh` — إنشاء وإدارة ملفات المختبر، كتالوج التدريب، ومساحة CTF.
 - `~/bin/sec` — واجهة الأوامر ذات الكلمة الواحدة.
 - `~/bin/guard` — Safety Guard يمنع الأهداف غير المسموح بها.
-- `~/bin/report` — إنشاء تقرير تلقائي لكل فحص.
+- `~/bin/report` — واجهة التقارير المحلية.
 
 ## Safety Guard
 
@@ -47,11 +47,22 @@
 ./tools/ctf-manager.sh validate
 ```
 
-الكتالوج الحالي يتضمن تمارين محلية اصطناعية، ونطاقها `local-only`. يمكن استخدامه مع Lab Manager لتوثيق وتمييز حالات التدريب.
+الكتالوج مخصص لتمارين محلية اصطناعية ونطاقها `local-only`.
 
-## التقارير
+## Report Engine
 
-كل فحص ناجح يحفظ مخرجاته في `~/sec_lab/reports/` وينشئ ملف Markdown مقابلاً يحتوي على التاريخ والنطاق والهدف ومكان الأدلة والملاحظات.
+`tools/report-engine.sh` هو محرك تقارير موحّد لنتائج الـLab والـCTF والاختبارات. المحرك لا ينفذ فحوصًا أو اتصالات؛ هو يستقبل النتائج ويحوّلها إلى تقارير Markdown تحت `~/sec_lab/reports/`.
+
+```bash
+./tools/report-engine.sh init
+./tools/report-engine.sh new ctf localhost "Authentication CTF"
+./tools/report-engine.sh from-file lab localhost "Local scan" result.txt
+./tools/report-engine.sh list
+./tools/report-engine.sh validate
+./tools/report-engine.sh stats
+```
+
+كل تقرير يحمل نوع العملية والهدف والنطاق والحالة والتوقيت وملخصًا ومكان الأدلة وخطوات المتابعة. النطاق الافتراضي في المحرك `local-only`.
 
 > استخدم أدوات الأمن فقط على أنظمة تملكها أو لديك تصريح صريح لاختبارها. إعداد المختبر لا يمنح تصريحًا لاختبار أي هدف خارجي.
 
@@ -64,13 +75,14 @@
 - `.github/workflows/ci.yml` يتحقق من Python وJSON وBash ويبحث عن أنماط مفاتيح/مفاتيح خاصة مسربة.
 - `.github/workflows/test-manager.yml` يشغّل Test Manager على push وpull request ويدويًا.
 - `.github/workflows/ctf.yml` يتحقق من CTF Manager على التغييرات الخاصة به.
-- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، وفحص الأسرار وCTF validation في أمر واحد:
+- `.github/workflows/report-engine.yml` يتحقق من Report Engine ويشغّل Test Manager.
+- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، فحص الأسرار، CTF validation وReport validation:
 
 ```bash
 bash tools/test-manager.sh all
 ```
 
-- `tests/test_test_manager.sh` و`tests/test_ctf_manager.sh` يتحققان من مكونات الاختبار.
+- `tests/test_test_manager.sh` و`tests/test_ctf_manager.sh` و`tests/test_report_engine.sh` تتحقق من مكونات الاختبار.
 - `.github/workflows/ai.yml` يبقى تشغيلًا يدويًا فقط لتجنب تشغيل API غير مقصود.
 
 ## المشروع الأصلي
