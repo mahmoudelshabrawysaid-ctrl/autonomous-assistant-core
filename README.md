@@ -36,9 +36,18 @@
 
 الأهداف العامة وأسماء النطاقات العامة والـURLs يتم رفضها من طبقة الحماية قبل تشغيل الفحص.
 
-## CTF Targets
+## CTF Manager
 
-يتم إنشاء كتالوج محلي لتمارين Web وSQLi وAuthentication وAPI وNetwork وForensics، إضافة إلى **1000 حالة تدريبية اصطناعية** قابلة للتوسع. هذه الحالات مواد تدريبية وبيانات مختبر، وليست نشرًا لثغرات على الإنترنت.
+`tools/ctf-manager.sh` يدير كتالوج التدريب المحلي دون تنفيذ هجوم على أهداف خارجية:
+
+```bash
+./tools/ctf-manager.sh list
+./tools/ctf-manager.sh show 001
+./tools/ctf-manager.sh stats
+./tools/ctf-manager.sh validate
+```
+
+الكتالوج الحالي يتضمن تمارين محلية اصطناعية، ونطاقها `local-only`. يمكن استخدامه مع Lab Manager لتوثيق وتمييز حالات التدريب.
 
 ## التقارير
 
@@ -54,13 +63,14 @@
 
 - `.github/workflows/ci.yml` يتحقق من Python وJSON وBash ويبحث عن أنماط مفاتيح/مفاتيح خاصة مسربة.
 - `.github/workflows/test-manager.yml` يشغّل Test Manager على push وpull request ويدويًا.
-- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، وفحص الأسرار في أمر واحد:
+- `.github/workflows/ctf.yml` يتحقق من CTF Manager على التغييرات الخاصة به.
+- `tools/test-manager.sh` يوحّد فحوص syntax/config، اختبارات الوحدة، وفحص الأسرار وCTF validation في أمر واحد:
 
 ```bash
 bash tools/test-manager.sh all
 ```
 
-- `tests/test_test_manager.sh` يتحقق من أن Test Manager نفسه قابل للتشغيل وفحوصه الأساسية تعمل.
+- `tests/test_test_manager.sh` و`tests/test_ctf_manager.sh` يتحققان من مكونات الاختبار.
 - `.github/workflows/ai.yml` يبقى تشغيلًا يدويًا فقط لتجنب تشغيل API غير مقصود.
 
 ## المشروع الأصلي
