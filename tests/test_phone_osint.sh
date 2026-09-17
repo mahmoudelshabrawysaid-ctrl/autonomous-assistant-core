@@ -19,6 +19,13 @@ grep -q 'public disclosure' <<<"$audit"
 grep -q '^not-performed=' <<<"$audit"
 grep -q 'OTP' <<<"$audit"
 
+deep="$(bash "$TOOL" deep +201001234567)"
+grep -q '^deep_status=completed' <<<"$deep"
+grep -q '^observed_at=' <<<"$deep"
+grep -q '^provider_config=' <<<"$deep"
+grep -q 'Evidence must be public' <<<"$deep"
+grep -q 'Identity, address, private profile' <<<"$deep"
+
 fixture="$(bash "$TOOL" ctf-fixture)"
 [[ -f "$fixture/target.json" ]]
 grep -q 'CTF Synthetic User' "$fixture/target.json"
