@@ -10,13 +10,14 @@ export SEC_LAB_DIR="$TMP_HOME/sec_lab"
 bash -n "$TOOL"
 [[ "$(bash "$TOOL" inspect +201001234567 | grep '^country=')" == 'country=Egypt' ]]
 [[ "$(bash "$TOOL" inspect '+20 100-123-4567' | grep '^normalized=')" == 'normalized=+201001234567' ]]
-! bash "$TOOL" inspect '01001234567' >/dev/null 2>&1
+[[ "$(bash "$TOOL" inspect '01001234567' | grep '^normalized=')" == 'normalized=+201001234567' ]]
 
 audit="$(bash "$TOOL" audit +201001234567)"
-grep -q '^public-data-that-may-exist=' <<<"$audit"
+grep -q '^public-intelligence-scope=' <<<"$audit"
 grep -q '^privacy-risk-checks=' <<<"$audit"
-grep -q 'SIM-swap' <<<"$audit"
+grep -q 'public disclosure' <<<"$audit"
 grep -q '^not-performed=' <<<"$audit"
+grep -q 'OTP' <<<"$audit"
 
 fixture="$(bash "$TOOL" ctf-fixture)"
 [[ -f "$fixture/target.json" ]]
