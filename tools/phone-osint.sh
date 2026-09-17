@@ -119,15 +119,15 @@ intel() {
 }
 
 deep() {
-  local n now raw provider_lines ok=0 err=0 blocked=0
-  n="$(normalize "$1")" || return 1
+  local n="$1" now raw ok=0 err=0 blocked=0 evidence_lines=0 business_sources=0 public_web_sources=0
+  n="$(normalize "$n")" || return 1
   now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   raw="$(mktemp)"
   trap 'rm -f "$raw"' RETURN
   run_providers "$n" > "$raw"
-  while IFS= read -r provider_lines; do
-    case "$provider_lines" in
-      provider=*\ status=ok\ *) ok=$((ok+1)) ;;
+  while IFS= read -r line; do
+    case "$line" in
+      provider=*\ status=ok\ *) ok=$((ok+1)); evidence_lines=$((evidence_lines+1)); case "$line" in *scope=business*) business_sources=$((business_sources+1));; *scope=public-web*) public_web_sources=$((public_web_sources+1));; esac ;;
       provider=*\ status=error\ *) err=$((err+1)) ;;
       provider=*\ status=blocked\ *) blocked=$((blocked+1)) ;;
     esac
@@ -135,6 +135,23 @@ deep() {
   printf 'deep_status=completed\nobserved_at=%s\nnormalized=%s\n' "$now" "$n"
   inspect "$n"
   printf '\nprovenance=\nprovider_config=%s\nproviders_ok=%d\nproviders_error=%d\nproviders_blocked=%d\n' "$CONFIG_FILE" "$ok" "$err" "$blocked"
+  printf '\nevidence_summary=\nprovider_evidence_records=%d\nbusiness_source_records=%d\npublic_web_source_records=%d\n' "$evidence_lines" "$business_sources" "$public_web_sources"
+  if (( evidence_lines == 0 )); then
+    printf 'evidence_state=NONE\ncorrelation_status=INSUFFICIENT_EVIDENCE\nconfidence=LOW\n'
+    printf 'finding=No corroborated public intelligence was observed.\n'
+    printf 'risk=UNDETERMINED\n'
+    printf 'remediation=Configure only lawful public providers, preserve source/timestamp provenance, then re-run.\n'
+  elif (( evidence_lines == 1 )); then
+    printf 'evidence_state=SINGLE_SOURCE\ncorrelation_status=UNCONFIRMED\nconfidence=LOW\n'
+    printf 'finding=Public evidence exists but is not independently corroborated.\n'
+    printf 'risk=REVIEW_REQUIRED\n'
+    printf 'remediation=Verify the source, freshness, ownership context, and corroboration before treating it as a finding.\n'
+  else
+    printf 'evidence_state=MULTI_SOURCE\ncorrelation_status=CORROBORATION_AVAILABLE\nconfidence=MEDIUM\n'
+    printf 'finding=Multiple public provider records were observed; correlation requires source-level review.\n'
+    printf 'risk=REVIEW_REQUIRED\n'
+    printf 'remediation=Review each source, resolve contradictions, record freshness, and only then promote evidence to a confirmed finding.\n'
+  fi
   printf '\nevidence_policy=\n- Evidence must be public and source-attributed.\n- Correlation requires independent-source agreement or owner-published business context.\n- A missing result is not evidence that a number is unused or safe.\n- Identity, address, private profile, OTP/reset, credential and telecom actions are out of scope.\n'
   printf '\nnext_actions=\n- Review provider output and timestamps.\n- Convert corroborated evidence into Finding -> Risk -> Remediation.\n- Re-check stale business listings before treating them as current.\n'
   cp "$raw" "$CACHE_DIR/$(printf '%s' "$n" | tr -cd '0-9').providers.txt"
