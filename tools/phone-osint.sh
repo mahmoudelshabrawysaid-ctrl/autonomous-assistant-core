@@ -10,7 +10,7 @@ CONFIG_FILE="${PHONE_INTEL_CONFIG:-$LAB_DIR/phone-intel/providers.conf}"
 
 usage() {
   cat <<'EOF'
-Public Phone Intelligence — authorized/public-data lab workflow
+Public Phone Intelligence — offline, authorized lab workflow
 
 Usage:
   phone-osint.sh inspect <phone>
@@ -97,7 +97,7 @@ run_providers() {
     case "$scope" in metadata|business|public-web) ;; *) printf 'provider=%s status=blocked reason=invalid-scope\n' "$name"; continue ;; esac
     if output="$(bash -c "$command" -- "$phone" 2>/dev/null)"; then
       printf 'provider=%s status=ok scope=%s\n' "$name" "$scope"
-      printf '%s\n' "$output" | sed 's/[^[:print:]	]//g' | head -n 80
+      printf '%s\n' "$output" | sed 's/[^[:print:]\t]//g' | head -n 80
     else
       printf 'provider=%s status=error scope=%s\n' "$name" "$scope"
     fi
