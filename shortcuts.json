@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "gateway": "/core",
+  "commands": {
+    "/core": "natural-language command router",
+    "/sec": "security lab and authorized defensive testing",
+    "/ctf": "CTF targets and training cases",
+    "/scan": "authorized local/lab scanning",
+    "/report": "generate or organize reports",
+    "/code": "GitHub, code, tests, and fixes",
+    "/notion": "Notion knowledge and documentation",
+    "/airtable": "Airtable records and operations",
+    "/canva": "Canva designs and edits",
+    "/qr": "CodeQR links and QR workflows",
+    "/python": "Python coding and analysis",
+    "/web": "web research and current information",
+    "/english": "English learning and pronunciation",
+    "/football": "football information and schedules",
+    "/plugins": "plugin discovery and management",
+    "/help": "show this shortcut registry"
+  },
+  "routing": {
+    "default": "/core",
+    "natural_language": true,
+    "execute_when_authorized": true,
+    "final_only_reporting": true
+  },
+  "security": {
+    "guard_enabled": true,
+    "scope": "localhost, explicitly allowlisted private targets, CTF/lab assets, or authorized systems",
+    "no_public_target_authorization": true
+  }
+}
