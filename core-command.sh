@@ -52,7 +52,7 @@ PY
 
 classify() {
   local text="${1,,}"
-  if [[ "$text" =~ (ctf|lab|scan|recon|vuln|target|allowlist|nmap|sqli|xss|security|cyber|اختبار|اختراق|لاب|سكان|فحص|ثغرة|هدف|سيبر) ]]; then echo security; return; fi
+  if [[ "$text" =~ (ctf|lab|scan|recon|vuln|target|allowlist|nmap|sqli|xss|security|cyber|phone|telephone|otp|sim-swap|هاتف|تليفون|موبايل|رقم|اختبار|اختراق|لاب|سكان|فحص|ثغرة|هدف|سيبر) ]]; then echo security; return; fi
   if [[ "$text" =~ (github|repo|commit|branch|pull request|workflow|code|bug|fix|build|test|برمج|كود|مشروع|جيت) ]]; then echo code; return; fi
   if [[ "$text" =~ (report|summary|document|docs|تقرير|ملخص|توثيق) ]]; then echo report; return; fi
   if [[ "$text" =~ (english|pronunciation|travel|انجليزي|إنجليزي|نطق|سفر) ]]; then echo english; return; fi
