@@ -30,7 +30,7 @@ football_out="$(bash "$CORE" classify 'اعرف نتيجة المباراة')"
 assert_eq 'Arabic football classification' football "$football_out"
 integration_out="$(bash "$CORE" classify 'ظبط notion plugin')"
 assert_eq 'integration classification' integrations "$integration_out"
-general_out="$(bash "$CORE" classify 'اعمل خطة للمشروع')"
+general_out="$(bash "$CORE" classify 'اعمل خطة عامة')"
 assert_eq 'general classification' general "$general_out"
 
 route_out="$(bash "$CORE" route 'اعمل فحص للاب CTF')"
