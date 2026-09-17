@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SEC_DIR="${HOME}/sec_lab"
+SEC_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}"
 BIN_DIR="${HOME}/bin"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$SEC_DIR" "$SEC_DIR/targets" "$SEC_DIR/reports" "$SEC_DIR/ctf" "$SEC_DIR/cases" "$SEC_DIR/tools" "$BIN_DIR"
@@ -10,13 +10,14 @@ mkdir -p "$SEC_DIR" "$SEC_DIR/targets" "$SEC_DIR/reports" "$SEC_DIR/ctf" "$SEC_D
 touch "$SEC_DIR/targets/allowlist.txt"
 for t in 127.0.0.1 localhost ::1; do grep -Fxq "$t" "$SEC_DIR/targets/allowlist.txt" || echo "$t" >> "$SEC_DIR/targets/allowlist.txt"; done
 
-# Copy lab-only engines into a stable installation path so generated commands do not
-# depend on the source repository still existing after installation.
-if [[ -x "$ROOT_DIR/tools/report-engine.sh" ]]; then
+# Copy lab-only engines into a stable installation path. Source files may lose their
+# executable bit when checked out through some GitHub/CI paths, so test for -f here
+# and enforce executability on the installed copies.
+if [[ -f "$ROOT_DIR/tools/report-engine.sh" ]]; then
   cp "$ROOT_DIR/tools/report-engine.sh" "$SEC_DIR/tools/report-engine.sh"
   chmod +x "$SEC_DIR/tools/report-engine.sh"
 fi
-if [[ -x "$ROOT_DIR/tools/phone-osint.sh" ]]; then
+if [[ -f "$ROOT_DIR/tools/phone-osint.sh" ]]; then
   cp "$ROOT_DIR/tools/phone-osint.sh" "$SEC_DIR/tools/phone-osint.sh"
   chmod +x "$SEC_DIR/tools/phone-osint.sh"
 fi
@@ -47,11 +48,10 @@ id	category	title	severity	scope
 011	privacy	Phone OSINT and privacy audit	medium	local-only
 EOF
 
-python - "$SEC_DIR/cases/catalog.tsv" <<'PY'
+python3 - "$SEC_DIR/cases/catalog.tsv" <<'PY'
 import csv, sys
 from pathlib import Path
 p=Path(sys.argv[1]); rows=list(csv.DictReader(p.open(), delimiter='\t'))
-existing={r['id'] for r in rows}
 cats=['web','api','auth','network','config','crypto','cloud','container','mobile','forensics','logging','supply-chain']
 patterns=['input validation','access control','session handling','error handling','configuration review','logging review','dependency review','rate-limit testing','header review','secret handling']
 for i in range(12,1001):
@@ -63,7 +63,7 @@ PY
 cat > "$BIN_DIR/guard" <<'GUARD'
 #!/usr/bin/env bash
 set -euo pipefail
-SEC_DIR="${HOME}/sec_lab"
+SEC_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}"
 target="${1:-}"
 [[ -n "$target" ]] || { echo 'Target required.' >&2; exit 2; }
 case "$target" in
@@ -79,7 +79,7 @@ chmod +x "$BIN_DIR/guard"
 cat > "$BIN_DIR/report" <<'REPORT'
 #!/usr/bin/env bash
 set -euo pipefail
-SEC_DIR="${HOME}/sec_lab"
+SEC_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}"
 ENGINE="${SEC_LAB_ENGINE:-$SEC_DIR/tools/report-engine.sh}"
 if [[ ! -x "$ENGINE" ]]; then
   echo "Report Engine not executable: $ENGINE" >&2
@@ -115,7 +115,7 @@ chmod +x "$BIN_DIR/report"
 cat > "$BIN_DIR/sec" <<'CMD'
 #!/usr/bin/env bash
 set -euo pipefail
-SEC_DIR="${HOME}/sec_lab"
+SEC_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}"
 PHONE_TOOL="$SEC_DIR/tools/phone-osint.sh"
 case "${1:-help}" in
   scan|recon|vuln)
@@ -145,8 +145,8 @@ case "${1:-help}" in
     ;;
   ctf) printf 'CTF catalog: %s\n' "$SEC_DIR/ctf/targets.tsv"; column -t -s $'\t' "$SEC_DIR/ctf/targets.tsv" 2>/dev/null || cat "$SEC_DIR/ctf/targets.tsv" ;;
   lab) exec "$HOME/bin/lab" ;;
-  report) exec "$HOME/bin/report" "${2:-}" ;;
-  doctor) "$HOME/bin/lab" --doctor ;;
+  report) exec "$HOME/bin/report" "${2:-}" ;
+  doctor) "$HOME/bin/lab" --doctor ;
   help|*) cat <<'EOF'
 Commands:
   scan [target]    authorized scan + automatic report
@@ -167,10 +167,10 @@ chmod +x "$BIN_DIR/sec"
 cat > "$BIN_DIR/lab" <<'LAB'
 #!/usr/bin/env bash
 set -euo pipefail
-SEC_DIR="${HOME}/sec_lab"
+SEC_DIR="${SEC_LAB_DIR:-${HOME}/sec_lab}"
 if [[ "${1:-}" == "--doctor" ]]; then
   echo '== Lab health =='
-  for x in nmap python git curl wget nc tcpdump ssh hydra sqlmap; do command -v "$x" >/dev/null 2>&1 && echo "[OK] $x" || echo "[--] $x"; done
+  for x in nmap python3 git curl wget nc tcpdump ssh hydra sqlmap; do command -v "$x" >/dev/null 2>&1 && echo "[OK] $x" || echo "[--] $x"; done
   [[ -s "$SEC_DIR/targets/allowlist.txt" ]] && echo '[OK] safety allowlist' || echo '[--] safety allowlist'
   [[ -s "$SEC_DIR/cases/catalog.tsv" ]] && echo '[OK] CTF/training catalog' || echo '[--] CTF/training catalog'
   [[ -x "$SEC_DIR/../bin/report" ]] && echo '[OK] report command' || true
